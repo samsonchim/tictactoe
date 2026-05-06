@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+          --netflix-red: #E50914;
+          --netflix-red-dark: #b20710;
+          --netflix-red-glow: rgba(229, 9, 20, 0.35);
+          --bg-black: #141414;
+          --bg-card: #1a1a1a;
+          --bg-elevated: #242424;
+          --bg-cell: #1e1e1e;
+          --text-primary: #ffffff;
+          --text-secondary: #b3b3b3;
+          --text-muted: #666666;
+          --border-subtle: rgba(255,255,255,0.08);
+          --gold: #f5c518;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+          font-family: 'Barlow', sans-serif;
+          background-color: var(--bg-black);
+          background-image:
+            radial-gradient(ellipse at 20% 50%, rgba(229,9,20,0.06) 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 20%, rgba(229,9,20,0.04) 0%, transparent 50%);
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+          color: var(--text-primary);
+        }
+
+        body::before {
+          content: '';
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 4px;
+          background: var(--netflix-red);
+          z-index: 9999;
+        }
+
+        .modal-overlay {
+          display: flex;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.85);
+          backdrop-filter: blur(6px);
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .modal-overlay.hidden { display: none; }
+
+        .modal-content {
+          background: var(--bg-card);
+          border: 1px solid var(--border-subtle);
+          border-top: 3px solid var(--netflix-red);
+          border-radius: 4px;
+          padding: 40px 36px;
+          max-width: 480px;
+          width: 90%;
+          box-shadow: 0 0 0 1px rgba(229,9,20,0.1), 0 30px 80px rgba(0,0,0,0.8);
+          position: relative;
+          animation: modalIn 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.93) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-close {
+          position: absolute;
+          top: 14px; right: 16px;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid var(--border-subtle);
+          border-radius: 50%;
+          font-size: 18px;
+          cursor: pointer;
+          color: var(--text-secondary);
+          width: 32px; height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+          background: var(--netflix-red);
+          border-color: var(--netflix-red);
+          color: white;
+          transform: scale(1.1);
+        }
+
+        .modal-content h2 {
+          font-family: 'Bebas Neue', sans-serif;
+          color: var(--text-primary);
+          margin-bottom: 24px;
+          font-size: 2.2rem;
+          letter-spacing: 2px;
+        }
+
+        .instructions-body { color: var(--text-secondary); line-height: 1.75; }
+
+        .instructions-body p {
+          margin-bottom: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+        }
+
+        .instructions-body ul { margin-left: 0; margin-bottom: 18px; list-style: none; }
+
+        .instructions-body li {
+          margin-bottom: 10px;
+          padding-left: 20px;
+          position: relative;
+          font-size: 0.95rem;
+        }
+
+        .instructions-body li::before {
+          content: '▸';
+          position: absolute;
+          left: 0;
+          color: var(--netflix-red);
+        }
+
+        .instructions-body strong { color: var(--text-primary); font-weight: 700; }
+        .instructions-body em { color: var(--netflix-red); font-style: normal; font-weight: 600; }
+
+        .container {
+          background: var(--bg-card);
+          border: 1px solid var(--border-subtle);
+          border-radius: 6px;
+          padding: 44px 40px 40px;
+          max-width: 480px;
+          width: 100%;
+          box-shadow: 0 0 0 1px rgba(229,9,20,0.05), 0 40px 100px rgba(0,0,0,0.7);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .container::before {
+          content: '';
+          position: absolute;
+          top: -60px; right: -60px;
+          width: 180px; height: 180px;
+          background: radial-gradient(circle, rgba(229,9,20,0.12) 0%, transparent 70%);
+          pointer-events: none;
+        }
+
+        h1 {
+          font-family: 'Bebas Neue', sans-serif;
+          text-align: center;
+          color: var(--text-primary);
+          margin-bottom: 4px;
+          font-size: 3.4rem;
+          letter-spacing: 4px;
+          line-height: 1;
+        }
+
+        .title-accent { color: var(--netflix-red); }
+
+        .subtitle {
+          text-align: center;
+          color: var(--text-muted);
+          margin-bottom: 30px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 3px;
+        }
+
+        .controls {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          align-items: center;
+          margin-bottom: 22px;
+        }
+
+        .info-box {
+          width: 100%;
+          background: var(--bg-elevated);
+          border: 1px solid var(--border-subtle);
+          padding: 14px 18px;
+          border-radius: 4px;
+          text-align: center;
+        }
+
+        .player-info {
+          display: flex;
+          justify-content: space-around;
+          gap: 20px;
+          margin-bottom: 10px;
+          font-weight: 700;
+        }
+
+        .player-x { color: var(--text-primary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .player-x strong { color: var(--netflix-red); font-size: 1.1rem; }
+        .player-o { color: var(--text-secondary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .player-o strong { color: var(--gold); font-size: 1.1rem; }
+
+        .game-phase {
+          font-size: 0.72rem;
+          color: var(--text-muted);
+          font-weight: 600;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+        }
+
+        .btn-new-game {
+          padding: 13px 30px;
+          background: var(--netflix-red);
+          color: white;
+          border: none;
+          border-radius: 3px;
+          font-family: 'Barlow', sans-serif;
+          font-weight: 700;
+          font-size: 0.88rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          width: 100%;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+        }
+
+        .btn-new-game:hover {
+          background: var(--netflix-red-dark);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 24px var(--netflix-red-glow);
+        }
+
+        .btn-new-game:active { transform: translateY(0); box-shadow: none; }
+
+        .status {
+          text-align: center;
+          color: var(--text-secondary);
+          margin-bottom: 22px;
+          font-weight: 500;
+          font-size: 0.92rem;
+          min-height: 22px;
+          letter-spacing: 0.3px;
+          transition: color 0.3s;
+        }
+
+        .board-container { display: flex; justify-content: center; margin: 0 auto; }
+
+        .board {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
+          gap: 0;
+          width: 100%;
+          max-width: 360px;
+          height: 360px;
+          border: 1px solid rgba(229,9,20,0.3);
+          border-radius: 4px;
+          background: rgba(229,9,20,0.06);
+          overflow: hidden;
+          box-shadow: 0 0 0 1px rgba(229,9,20,0.08), inset 0 0 40px rgba(229,9,20,0.03);
+        }
+
+        .cell {
+          background: var(--bg-cell);
+          border: 1px solid rgba(255,255,255,0.04);
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 3rem;
+          letter-spacing: 2px;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          color: var(--text-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          margin: 0;
+        }
+
+        .cell:hover:not(:disabled):not(.x):not(.o) {
+          background: rgba(229,9,20,0.1);
+          border-color: rgba(229,9,20,0.22);
+        }
+
+        .cell:active:not(:disabled) { background: rgba(229,9,20,0.18); }
+
+        .cell.selected {
+          background: rgba(245,197,24,0.1);
+          border-color: var(--gold) !important;
+          animation: pulseGold 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulseGold {
+          0%,100% { box-shadow: inset 0 0 18px rgba(245,197,24,0.12); }
+          50%      { box-shadow: inset 0 0 28px rgba(245,197,24,0.28); }
+        }
+
+        .cell:disabled { cursor: not-allowed; }
+
+        .cell.x {
+          color: var(--netflix-red);
+          background: rgba(229,9,20,0.07);
+          border-color: rgba(229,9,20,0.18);
+          text-shadow: 0 0 18px rgba(229,9,20,0.5);
+        }
+
+        .cell.o {
+          color: var(--gold);
+          background: rgba(245,197,24,0.05);
+          border-color: rgba(245,197,24,0.14);
+          text-shadow: 0 0 18px rgba(245,197,24,0.4);
+        }
+
+        .board .cell:nth-child(1), .board .cell:nth-child(2),
+        .board .cell:nth-child(4), .board .cell:nth-child(5) {
+          border-right: 1px solid rgba(229,9,20,0.22);
+          border-bottom: 1px solid rgba(229,9,20,0.22);
+        }
+        .board .cell:nth-child(3), .board .cell:nth-child(6) { border-bottom: 1px solid rgba(229,9,20,0.22); }
+        .board .cell:nth-child(7), .board .cell:nth-child(8) { border-right: 1px solid rgba(229,9,20,0.22); }
+
+        @media (max-width: 480px) {
+          .container { padding: 28px 20px 24px; }
+          h1 { font-size: 2.6rem; }
+          .board { max-width: 300px; height: 300px; }
+          .cell { font-size: 2.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="instructionsModal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="closeModal" class="modal-close">&times;</button>
+            <h2>How to Play</h2>
+            <div class="instructions-body">
+                <p>Game Rules</p>
+                <ul>
+                    <li>Each player has <strong>3 pieces</strong> — You play <strong>X</strong>, AI plays <strong>O</strong></li>
+                    <li><strong>Phase 1 — Placing:</strong> Click empty cells to place your pieces</li>
+                    <li><strong>Phase 2 — Moving:</strong> After all 3 pieces are placed, click a piece to grab it, then click an empty cell to move it</li>
+                    <li>First to get <strong>3 in a row</strong> (horizontal, vertical, or diagonal) wins!</li>
+                </ul>
+                <p><em>Good luck. Can you beat the AI?</em></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>TIC<span class="title-accent">-</span>TAC<span class="title-accent">-</span>TOE</h1>
+        <p class="subtitle">3 Pieces Edition</p>
+        <div class="controls">
+            <div class="info-box">
+                <div class="player-info">
+                    <span class="player-x">You (X): <strong id="xPieces">3</strong>/3</span>
+                    <span class="player-o">AI (O): <strong id="oPieces">3</strong>/3</span>
+                </div>
+                <p id="gamePhase" class="game-phase">Placing Phase</p>
+            </div>
+            <button id="newGameBtn" class="btn-new-game">&#9658; New Game</button>
+        </div>
+        <p id="status" class="status">Click a square to place your first piece!</p>
+        <div class="board-container">
+            <div class="board board-3x3" id="board"></div>
+        </div>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const statusEl = document.getElementById('status');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const instructionsModal = document.getElementById('instructionsModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const xPiecesEl = document.getElementById('xPieces');
+        const oPiecesEl = document.getElementById('oPieces');
+        const gamePhaseEl = document.getElementById('gamePhase');
+
+        let board = Array(9).fill('');
+        let gameOver = false;
+        let waitingAI = false;
+        let xPlaced = 0;
+        let oPlaced = 0;
+        let selectedCell = null;
+        let gamePhase = 'placing';
+
+        window.addEventListener('load', () => instructionsModal.classList.remove('hidden'));
+        closeModalBtn.addEventListener('click', () => instructionsModal.classList.add('hidden'));
+        instructionsModal.addEventListener('click', (e) => {
+            if (e.target === instructionsModal) instructionsModal.classList.add('hidden');
+        });
+
+        function createBoard() {
+            boardEl.innerHTML = '';
+            boardEl.className = 'board board-3x3';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('button');
+                cell.type = 'button';
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleCellClick(i));
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function renderBoard() {
+            document.querySelectorAll('.cell').forEach((cell, idx) => {
+                const value = board[idx];
+                cell.textContent = value;
+                cell.classList.remove('x', 'o', 'selected');
+                if (value === 'X') cell.classList.add('x');
+                else if (value === 'O') cell.classList.add('o');
+                if (selectedCell === idx) cell.classList.add('selected');
+                cell.disabled = gameOver || waitingAI;
+            });
+            xPiecesEl.textContent = 3 - xPlaced;
+            oPiecesEl.textContent = 3 - oPlaced;
+            gamePhaseEl.textContent = gamePhase === 'placing' ? 'Placing Phase' : 'Moving Phase';
+        }
+
+        function setStatus(text) { statusEl.textContent = text; }
+
+        function checkWinner() {
+            return checkWinnerForBoard(board);
+        }
+
+        function checkWinnerForBoard(b) {
+            const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            for (const [a,bb,c] of lines) {
+                if (b[a] && b[a] === b[bb] && b[bb] === b[c]) return b[a];
+            }
+            return null;
+        }
+
+        async function handleCellClick(index) {
+            if (gameOver || waitingAI || board[index] === 'O') return;
+
+            if (gamePhase === 'placing') {
+                if (board[index] !== '') return;
+                if (xPlaced < 3) {
+                    board[index] = 'X'; xPlaced++;
+                    renderBoard();
+                    if (checkWinner() === 'X') { setStatus('You win!'); gameOver = true; renderBoard(); return; }
+                    if (xPlaced === 3 && oPlaced === 3) {
+                        gamePhase = 'moving';
+                        setStatus('Moving phase! Click a piece to grab it, then click an empty cell to move it.');
+                        await new Promise(r => setTimeout(r, 500));
+                        renderBoard(); return;
+                    }
+                    waitingAI = true; setStatus('AI is placing...');
+                    await new Promise(r => setTimeout(r, 1000));
+                    const aiMove = getAIPlacingMove();
+                    if (aiMove !== null) {
+                        board[aiMove] = 'O'; oPlaced++;
+                        if (checkWinner() === 'O') { setStatus('AI wins!'); gameOver = true; renderBoard(); waitingAI = false; return; }
+                    }
+                    if (xPlaced === 3 && oPlaced === 3) {
+                        gamePhase = 'moving';
+                        setStatus('Moving phase! Click a piece to grab it, then click an empty cell to move it.');
+                    } else { setStatus('Your turn to place!'); }
+                    waitingAI = false; renderBoard();
+                }
+            } else {
+                if (board[index] === 'X') {
+                    selectedCell = (selectedCell === index) ? null : index;
+                    renderBoard(); return;
+                }
+                if (selectedCell !== null && board[index] === '' && board[selectedCell] === 'X') {
+                    board[index] = 'X'; board[selectedCell] = ''; selectedCell = null;
+                    renderBoard();
+                    if (checkWinner() === 'X') { setStatus('You win!'); gameOver = true; renderBoard(); return; }
+                    waitingAI = true; setStatus('AI is moving...');
+                    await new Promise(r => setTimeout(r, 1000));
+                    const aiMove = getAIMovingMove();
+                    if (aiMove) {
+                        board[aiMove.to] = 'O'; board[aiMove.from] = '';
+                        if (checkWinner() === 'O') { setStatus('AI wins!'); gameOver = true; renderBoard(); waitingAI = false; return; }
+                    }
+                    setStatus('Your turn to move!'); waitingAI = false; renderBoard();
+                }
+            }
+        }
+
+        function getAIPlacingMove() {
+            const avail = board.map((c,i) => c===''?i:null).filter(i=>i!==null);
+            if (!avail.length) return null;
+            for (const m of avail) { const t=[...board];t[m]='O'; if(checkWinnerForBoard(t)==='O') return m; }
+            for (const m of avail) { const t=[...board];t[m]='X'; if(checkWinnerForBoard(t)==='X') return m; }
+            for (const i of [4,0,2,6,8]) { if(avail.includes(i)) return i; }
+            return avail[Math.floor(Math.random()*avail.length)];
+        }
+
+        function getAIMovingMove() {
+            const oPos = board.map((c,i)=>c==='O'?i:null).filter(i=>i!==null);
+            const empty = board.map((c,i)=>c===''?i:null).filter(i=>i!==null);
+            for (const from of oPos) for (const to of empty) {
+                const t=[...board];t[from]='';t[to]='O';
+                if(checkWinnerForBoard(t)==='O') return {from,to};
+            }
+            for (const from of oPos) for (const to of empty) {
+                const t=[...board];t[from]='';t[to]='O';
+                const xp=t.map((c,i)=>c==='X'?i:null).filter(i=>i!==null);
+                const ep=t.map((c,i)=>c===''?i:null).filter(i=>i!==null);
+                for (const xf of xp) for (const xt of ep) {
+                    const t2=[...t];t2[xf]='';t2[xt]='X';
+                    if(checkWinnerForBoard(t2)==='X') return {from,to};
+                }
+            }
+            if (oPos.length && empty.length)
+                return {from:oPos[Math.floor(Math.random()*oPos.length)],to:empty[Math.floor(Math.random()*empty.length)]};
+            return null;
+        }
+
+        function resetGame() {
+            board=Array(9).fill(''); gameOver=false; waitingAI=false;
+            xPlaced=0; oPlaced=0; selectedCell=null; gamePhase='placing';
+            setStatus('Click a square to place your first piece!');
+            createBoard(); renderBoard();
+        }
+
+        newGameBtn.addEventListener('click', resetGame);
+        createBoard();
+        renderBoard();
+    </script>
+</body>
+</html>
